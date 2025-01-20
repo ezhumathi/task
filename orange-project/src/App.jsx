@@ -1,18 +1,14 @@
-import React, { useState } from "react";
+import React from "react";
+import Greeting from "./Greeting";
 
 function App() {
-  
-  const [value, setValue] = useState(0);
-
-  
-  const incrementValue = () => {
-    setValue(value + 1); 
-  };
-
   return (
     <div>
-      <h1>Value: {value}</h1>
-      <button onClick={incrementValue}>Increment</button>
+      <h1>Props Example</h1>
+      {/* Passing props to the Greeting component */}
+      <Greeting name="Alice" age={25} />
+      <Greeting name="Bob" age={30} />
+      <Greeting name="Charlie" age={35} />
     </div>
   );
 }
