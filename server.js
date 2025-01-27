@@ -36,6 +36,19 @@ server.put('/product/:id',(req,res)=>{
         res.status(404).json("item not found in data base")
     }
 })
+
+server.delete('/product/:id', (req, res) => {
+    const itemid = parseInt(req.params.id);
+    const itemIndex = items.findIndex((item) => item.id === itemid);
+    if (itemIndex !== -1) {
+        const deletedItem = items.splice(itemIndex, 1);
+        res.json({ message: "Item deleted successfully", deletedItem: deletedItem[0] });
+    } else {
+        res.status(404).json({ error: "Item not found in the database" });
+    }
+});
+
 server.listen(port,()=>{
     console.log("server is running on http://localhost:${port}")
 });
+
