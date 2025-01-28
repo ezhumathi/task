@@ -1,11 +1,8 @@
-
 const express = require("express");
 const mongoose = require("mongoose");
 require("dotenv").config();
 
-
 const mongoURI = process.env.mongo_uri;
-
 
 mongoose
   .connect(mongoURI, {
@@ -17,81 +14,111 @@ mongoose
   })
   .catch((error) => console.error("MongoDB connection error:", error));
 
-
-const productSchema = new mongoose.Schema({
+const studentSchema = new mongoose.Schema({
   name: {
     type: String,
-    required: true,
+    required: [true, "Name is required"],
   },
-  price: {
+  age: {
     type: Number,
-    required: true,
+    required: [true, "Age is required"],
+  },
+  class: {
+    type: String,
+    required: [true, "Class is required"],
+  },
+  section: {
+    type: String,
   },
 });
 
-
-const Product = mongoose.model("Product", productSchema);
-
+const Student = mongoose.model("Student", studentSchema);
 
 const server = express();
-
-
 server.use(express.json());
-
 
 const port = 5000;
 
 
-const items = [
-  { id: 1, name: "jeans" },
-  { id: 2, name: "skirts" },
-  { id: 3, name: "kurthis" },
-];
+server.post("/students", async (req, res) => {
+  try {
+    const { name, age, class: studentClass, section } = req.body;
+    if (!name || !age || !studentClass) {
+      return res.status(400).json({ error: "Name, age, and class are required." });
+    }
 
-
-server.get("/", (req, res) => {
-  res.end("Ezhumathi's server is running");
-});
-
-
-server.get("/product", (req, res) => {
-  res.json(items);
-});
-
-
-server.post("/product", (req, res) => {
-  const newItem = { id: items.length + 1, name: req.body.name };
-  items.push(newItem);
-  res.status(201).json(newItem);
-});
-
-
-server.put("/product/:id", (req, res) => {
-  const itemId = parseInt(req.params.id);
-  const updatedItemIndex = items.findIndex((item) => item.id === itemId);
-  if (updatedItemIndex !== -1) {
-    items[updatedItemIndex].name = req.body.name;
-    res.json(items[updatedItemIndex]);
-  } else {
-    res.status(404).json("Item not found in database");
+    const newStudent = new Student({ name, age, class: studentClass, section });
+    const savedStudent = await newStudent.save();
+    res.status(201).json(savedStudent);
+  } catch (error) {
+    res.status(500).json({ error: "Error adding student", details: error.message });
   }
 });
 
 
-server.delete("/product/:id", (req, res) => {
-  const itemId = parseInt(req.params.id);
-  const itemIndex = items.findIndex((item) => item.id === itemId);
-  if (itemIndex !== -1) {
-    const deletedItem = items.splice(itemIndex, 1);
-    res.json({
-      message: "Item deleted successfully",
-      deletedItem: deletedItem[0],
-    });
-  } else {
-    res.status(404).json({ error: "Item not found in the database" });
+server.get("/students", async (req, res) => {
+  try {
+    const students = await Student.find();
+    res.json(students);
+  } catch (error) {
+    res.status(500).json({ error: "Error fetching students", details: error.message });
   }
 });
 
+
+server.get("/students/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const student = await Student.findById(id);
+    if (!student) {
+      return res.status(404).json({ error: "Student not found" });
+    }
+    res.json(student);
+  } catch (error) {
+    res.status(500).json({ error: "Error fetching student", details: error.message });
+  }
+});
+
+
+server.put("/students/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, age, class: studentClass, section } = req.body;
+    if (!name || !age || !studentClass) {
+      return res.status(400).json({ error: "Name, age, and class are required." });
+    }
+
+    const updatedStudent = await Student.findByIdAndUpdate(
+      id,
+      { name, age, class: studentClass, section },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedStudent) {
+      return res.status(404).json({ error: "Student not found" });
+    }
+
+    res.json(updatedStudent);
+  } catch (error) {
+    res.status(500).json({ error: "Error updating student", details: error.message });
+  }
+});
+
+
+server.delete("/students/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const deletedStudent = await Student.findByIdAndDelete(id);
+
+    if (!deletedStudent) {
+      return res.status(404).json({ error: "Student not found" });
+    }
+
+    res.json({ message: "Student deleted successfully", deletedStudent });
+  } catch (error) {
+    res.status(500).json({ error: "Error deleting student", details: error.message });
+  }
+});
 
 server.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
